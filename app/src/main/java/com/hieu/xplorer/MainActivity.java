@@ -23,12 +23,14 @@ public class MainActivity extends Activity {
     private final static int CAMERA_PIC_REQUEST = 1;
     private String imagePath;
 
+    private boolean pictureTaken = false;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        Button magicButton = (Button)findViewById(R.id.magicbutton);
+        final Button magicButton = (Button)findViewById(R.id.magicbutton);
         magicButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
@@ -42,13 +44,16 @@ public class MainActivity extends Activity {
                     catch(Exception e) {
                     System.out.println("whoops");
                 }
-
-                if (photoFile != null) {
+                if (photoFile != null)
                     intent.putExtra(MediaStore.EXTRA_OUTPUT, Uri.fromFile(photoFile));
-                }
+
                 startActivityForResult(intent, CAMERA_PIC_REQUEST);
+
+                magicButton.setText("Take another picture");
+                //pictureTaken = true;
             }
         });
+
     }
 
     private File createImageFile() throws IOException {
@@ -73,10 +78,17 @@ public class MainActivity extends Activity {
         super.onActivityResult(requestCode, resultCode, data);
         if (requestCode == CAMERA_PIC_REQUEST) {
             try {
-                // Don't need the file: part
+                // Don't need the "file:" part
                 Bitmap thumbnail = BitmapFactory.decodeFile(imagePath.substring(5));
-                ImageView image = (ImageView) findViewById(R.id.image);
+
+                ImageView image = (ImageView) findViewById(R.id.image1);
+                if(pictureTaken)
+                    image = (ImageView) findViewById(R.id.image2);
+
                 image.setImageBitmap(thumbnail);
+                Toast.makeText(this, "Success!", Toast.LENGTH_SHORT).show();
+
+                pictureTaken = true;
             }
             catch(Exception e) {
                 Toast.makeText(this, "Failed to load", Toast.LENGTH_SHORT).show();
