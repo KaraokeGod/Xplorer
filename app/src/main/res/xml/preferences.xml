@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android">
+    <PreferenceCategory
+        android:title="CROSSVIEW"
+        android:key="pref_crossview">
+
+        <ListPreference
+            android:key="pref_key_resolution"
+            android:defaultValue="0"
+            android:entries="@array/pref_resolution_choices"
+            android:entryValues="@array/pref_resolution_values"
+            android:negativeButtonText="@null"
+            android:positiveButtonText="@null"
+            android:summary="Downscaled resolution of each image"
+            android:title="Output resolution"/>
+
+        <com.hieu.xplorer.NumberPickerPreference
+            android:key="pref_key_divider"
+            android:persistent="true"
+            android:summary="Divider width between left and right images"
+            android:title="Divider size" />
+
+        <com.hieu.xplorer.NumberPickerPreference
+            android:key="pref_key_border"
+            android:persistent="true"
+            android:summary="Border width around crossview image"
+            android:title="Border size" />
+
+        <ListPreference
+            android:defaultValue="100"
+            android:dialogTitle="hello"
+            android:inputType="number"
+            android:key="pref_query_limit"
+            android:summary="numbers bitch"
+            android:title="pref_border" />
+    </PreferenceCategory>
+
+</PreferenceScreen>

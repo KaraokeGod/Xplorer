@@ -2,6 +2,16 @@
     <string name="title_activity_settings">Settings</string>
 
     <!-- Strings related to Settings -->
+    <string-array name="pref_resolution_choices">
+        <item>720p</item>
+        <item>1080p</item>
+        <item>Native</item>
+    </string-array>
+    <string-array name="pref_resolution_values">
+        <item>720</item>
+        <item>1080</item>
+        <item>0</item>
+    </string-array>
 
     <!-- Example General settings -->
     <string name="pref_header_general">General</string>
