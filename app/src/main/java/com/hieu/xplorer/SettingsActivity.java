@@ -15,6 +15,12 @@ public class SettingsActivity extends PreferenceActivity {
                 .commit();
     }
 
+    @Override
+    public void onPause() {
+        super.onPause();
+        overridePendingTransition(R.anim.slide_in_right,
+                                  R.anim.slide_out_left);
+    }
 
     public static class SettingsFragment extends PreferenceFragment {
         @Override

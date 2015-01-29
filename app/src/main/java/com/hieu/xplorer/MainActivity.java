@@ -29,7 +29,7 @@ import java.util.Date;
 
 
 public class MainActivity extends Activity implements OnClickListener{
-    private final static int CAMERA_PIC_REQUEST = 1;
+    private final static int CAMERA_PIC_REQUEST = 5318008;
     private final String message[] = {"Take left picture", "Take right picture", "Save"};
 
     private String imagePath[];
@@ -37,8 +37,11 @@ public class MainActivity extends Activity implements OnClickListener{
     private Bitmap    bitmap[];
 
     private Button photoButton;
-    private int imageNum = 0;   // Choose which side to work on
+    private int imageNum = 0;    // Choose which side to work on
     private boolean done = false;
+
+    // Preference-related variables
+    private int scaledWidth, divider, border;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -53,30 +56,44 @@ public class MainActivity extends Activity implements OnClickListener{
         photoButton.setOnClickListener(this);
     }
 
+    @Override
+    protected void onRestart() {
+        super.onRestart();
+        getPreferences();
+    }
+
     private void takePhoto() {
         Intent intent = new Intent("android.media.action.IMAGE_CAPTURE");
 
         // Creates temporary image file
-        File imageFile = null;
+        File imageFile;
         try {
             imageFile = createImageFile(".jpg");
 
-            // Save a file: path for use with ACTION_VIEW intents
-            imagePath[imageNum] = "file:" + imageFile.getAbsolutePath();
+            imagePath[imageNum] = imageFile.getAbsolutePath();
 
-            // Saves image if creation was successful
-            if (imageFile != null)
-                intent.putExtra(MediaStore.EXTRA_OUTPUT, Uri.fromFile(imageFile));
+            // Launches camera and saves image
+            intent.putExtra(MediaStore.EXTRA_OUTPUT, Uri.fromFile(imageFile));
             startActivityForResult(intent, CAMERA_PIC_REQUEST);
 
-        } catch (Exception e) {}
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
     public void onClick(View view) {
         if(done) {
             try {
-                saveCrossviewImage();
-            } catch(Exception e){}
+                if(imagePath[2] == null)
+                    imagePath[2] = saveCrossviewImage();
+                Intent intent = new Intent(this, OutputActivity.class);
+                intent.putExtra(Intent.EXTRA_TEXT, imagePath[2]);
+                startActivity(intent);
+                overridePendingTransition(R.anim.slide_in_right,
+                                          R.anim.slide_out_left);
+            } catch(Exception e){
+                e.printStackTrace();
+            }
         }
         else
             takePhoto();
@@ -84,27 +101,25 @@ public class MainActivity extends Activity implements OnClickListener{
 
     // Delete files in directory
     private void deleteImages() {
-        if(imagePath != null) {
-            for(int i=0; i < 2; i++) {
+        if(imagePath != null)
+            for(int i=0; i < imagePath.length; i++)
                 if(imagePath[i] != null) {
                     File file = new File(imagePath[i].substring(5));
                     file.delete();
                 }
-            }
-        }
     }
     private void reset() {
         deleteImages();
 
-        imagePath = new String[2];
+        imagePath = new String[3];
         bitmap    = new Bitmap[2];
-        image[0].setImageDrawable(getResources().getDrawable(R.drawable.image3));
-        image[1].setImageDrawable(getResources().getDrawable(R.drawable.image3));
+        image[0].setImageDrawable(getResources().getDrawable(R.drawable.img1));
+        image[1].setImageDrawable(getResources().getDrawable(R.drawable.img2));
 
         imageNum = 0;
         done = false;
         photoButton.setText(message[0]);
-        photoButton.setCompoundDrawablesRelativeWithIntrinsicBounds(
+        photoButton.setCompoundDrawablesWithIntrinsicBounds(
                 R.drawable.ic_action_camera, 0, 0, 0);
 
         invalidateOptionsMenu();
@@ -116,9 +131,9 @@ public class MainActivity extends Activity implements OnClickListener{
         MenuInflater inflater = getMenuInflater();
         inflater.inflate(R.menu.main, menu);
 
+        // Hide if two images not yet taken
         if(!done) {
-            //menu.findItem(R.id.action_discard).setVisible(false);
-            menu.findItem(R.id.action_swap)   .setVisible(false);
+            menu.findItem(R.id.action_swap).setVisible(false);
         }
         return super.onCreateOptionsMenu(menu);
     }
@@ -136,8 +151,9 @@ public class MainActivity extends Activity implements OnClickListener{
                 swapImages();
                 return true;
             case R.id.action_settings:
-                Intent intent = new Intent(this, SettingsActivity.class);
-                startActivity(intent);
+                startActivity(new Intent(this, SettingsActivity.class));
+                overridePendingTransition(android.R.anim.slide_in_left,
+                                          android.R.anim.slide_out_right);
                 return true;
             default:
                 return super.onOptionsItemSelected(item);
@@ -157,10 +173,10 @@ public class MainActivity extends Activity implements OnClickListener{
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
-        if (requestCode == CAMERA_PIC_REQUEST) {
+        if (requestCode == CAMERA_PIC_REQUEST && resultCode == Activity.RESULT_OK) {
             try {
                 // Discard the "file:" part of the path
-                bitmap[imageNum] = BitmapFactory.decodeFile(imagePath[imageNum].substring(5));
+                bitmap[imageNum] = BitmapFactory.decodeFile(imagePath[imageNum]);
                 image[imageNum].setImageBitmap(bitmap[imageNum]);
 
                 if(imageNum == 1) {
@@ -178,7 +194,7 @@ public class MainActivity extends Activity implements OnClickListener{
             }
             catch(Exception e) {
                 Toast.makeText(this, "Failed to load", Toast.LENGTH_SHORT).show();
-                System.out.println(e);
+                e.printStackTrace();
             }
         }
     }
@@ -194,17 +210,27 @@ public class MainActivity extends Activity implements OnClickListener{
 
         image[0].setImageBitmap(bitmap[0]);
         image[1].setImageBitmap(bitmap[1]);
+        imagePath[2] = null;
     }
 
-    private void saveCrossviewImage() throws IOException {
-        // Get settings
+    private void getPreferences() {
+        // Reprocesses crossview image if settings have changed
         SharedPreferences sharedPref = PreferenceManager.getDefaultSharedPreferences(this);
-        int scaledWidth = Integer.parseInt(sharedPref.getString("pref_key_resolution", ""));
-        int divider = sharedPref.getInt("pref_key_divider", 0);
-        int border  = sharedPref.getInt("pref_key_border", 0);
+        int tempScaledWidth = Integer.parseInt(sharedPref.getString("pref_key_resolution", ""));
+        int tempDivider = sharedPref.getInt("pref_key_divider", 0);
+        int tempBorder  = sharedPref.getInt("pref_key_border", 0);
 
+        if(scaledWidth != tempScaledWidth || divider != tempDivider || border != tempBorder) {
+            scaledWidth = tempScaledWidth;
+            divider     = tempDivider;
+            border      = tempBorder;
+            imagePath[2] = null;
+        }
+    }
+
+    private String saveCrossviewImage() throws IOException {
         // Scale bitmaps
-        Bitmap left = bitmap[0];  // Native resolution
+        Bitmap left  = bitmap[0];  // Native resolution
         Bitmap right = bitmap[1];
         if(scaledWidth > 0) {
             left  = Bitmap.createScaledBitmap(bitmap[0], scaledWidth, scaledWidth * 16 / 9, false);
@@ -218,7 +244,7 @@ public class MainActivity extends Activity implements OnClickListener{
         bmp.eraseColor(Color.WHITE);
         Canvas crossview = new Canvas(bmp);
 
-        crossview.drawBitmap(left, border, border, null);
+        crossview.drawBitmap(left,  border, border, null);
         crossview.drawBitmap(right, border + left.getWidth() + divider, border, null);
 
         FileOutputStream out;
@@ -229,6 +255,7 @@ public class MainActivity extends Activity implements OnClickListener{
         } catch (Exception e) {}
 
         Toast.makeText(this, "Saved!", Toast.LENGTH_SHORT).show();
+        return image.getAbsolutePath();
     }
 
 }

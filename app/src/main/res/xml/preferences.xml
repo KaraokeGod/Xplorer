@@ -25,14 +25,6 @@
             android:persistent="true"
             android:summary="Border width around crossview image"
             android:title="Border size" />
-
-        <ListPreference
-            android:defaultValue="100"
-            android:dialogTitle="hello"
-            android:inputType="number"
-            android:key="pref_query_limit"
-            android:summary="numbers bitch"
-            android:title="pref_border" />
     </PreferenceCategory>
 
 </PreferenceScreen>
