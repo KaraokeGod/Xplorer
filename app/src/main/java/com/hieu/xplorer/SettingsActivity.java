@@ -16,8 +16,9 @@ public class SettingsActivity extends PreferenceActivity {
     }
 
     @Override
-    public void onPause() {
-        super.onPause();
+    public void onBackPressed() {
+        // Sets transition animation back to MainActivity
+        super.onBackPressed();
         overridePendingTransition(R.anim.slide_in_right,
                                   R.anim.slide_out_left);
     }
